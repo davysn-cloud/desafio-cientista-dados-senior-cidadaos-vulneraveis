@@ -1,0 +1,72 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": true,
+  "colorGroups": [
+    {
+      "query": "path:00-orchestrator",
+      "color": {
+        "a": 1,
+        "rgb": 5025616
+      }
+    },
+    {
+      "query": "path:01-data-engineer",
+      "color": {
+        "a": 1,
+        "rgb": 5025616
+      }
+    },
+    {
+      "query": "path:02-eda-analyst",
+      "color": {
+        "a": 1,
+        "rgb": 2201331
+      }
+    },
+    {
+      "query": "path:03-feature-engineer",
+      "color": {
+        "a": 1,
+        "rgb": 2201331
+      }
+    },
+    {
+      "query": "path:04-model-builder",
+      "color": {
+        "a": 1,
+        "rgb": 16750592
+      }
+    },
+    {
+      "query": "path:05-prioritization-designer",
+      "color": {
+        "a": 1,
+        "rgb": 16007990
+      }
+    },
+    {
+      "query": "path:06-narrator",
+      "color": {
+        "a": 1,
+        "rgb": 10232061
+      }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.5,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250,
+  "scale": 0.3794536483287834,
+  "close": false
+}
