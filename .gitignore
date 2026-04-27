@@ -1,16 +1,12 @@
 # Data files (too large for git)
 data/raw/
 data/processed/
-data/features/
 !data/.gitkeep
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-!data/features/.gitkeep
 
-# Model artifacts
-results/models/*.joblib
-results/models/*.pkl
-results/models/*.parquet
+# Model artifacts (random_forest é 83MB, demais são pequenos)
+results/models/random_forest.joblib
 
 # Python
 __pycache__/

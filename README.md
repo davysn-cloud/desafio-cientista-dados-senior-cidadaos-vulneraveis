@@ -128,13 +128,12 @@ o kernel: `python -m ipykernel install --user --name desafio-pic`.
 ├── data/
 │   ├── raw/            # Dados extraídos (gitignored se > 100MB)
 │   ├── processed/      # Dados limpos intermediários
-│   └── features/       # X_train, X_test, y_train, y_test (gitignored)
+│   └── features/       # X_train, X_test, y_train, y_test
 │
 ├── results/
 │   ├── figures/        # Todas as visualizações (Q1-Q10)
-│   └── models/         # Modelos treinados (.joblib, gitignored)
+│   └── models/         # Modelos treinados (.joblib)
 │
-├── vault/              # Documentação interna do projeto (multi-agent)
 ├── requirements.txt
 └── README.md
 ```
