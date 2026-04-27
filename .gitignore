@@ -41,5 +41,6 @@ Thumbs.db
 
 # Obsidian / project coordination (internal use only)
 vault/
+.obsidian/
 CLAUDE.md
 .claude/
