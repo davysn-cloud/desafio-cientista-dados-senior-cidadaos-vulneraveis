@@ -5,8 +5,7 @@ data/processed/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Model artifacts (random_forest é 83MB, demais são pequenos)
-results/models/random_forest.joblib
+# Model artifacts
 
 # Python
 __pycache__/
