@@ -21,12 +21,14 @@ independente.
 
 - **Clima e demanda (Q1):** precipitação tem correlação positiva com chamados de
   infraestrutura urbana (drenagem, árvores), mas negativa com alguns serviços de
-  conservação. O sinal climático é real, mas específico por categoria de serviço.
+  conservação. Análise de lag (precipitação acumulada em janelas de 1-5 dias) mostra
+  que o efeito é predominantemente instantâneo no agregado, mas varia por tipo de serviço.
 
 - **Padrões territoriais (Q2):** demanda muito concentrada — top 10 bairros respondem
   por fatia desproporcional do total. Mais relevante: o *perfil* de chamado muda por
-  Área de Planejamento. APs periféricas têm mais chamados de infraestrutura básica;
-  isso tem implicação direta para qualquer política de priorização.
+  Área de Planejamento. APs periféricas têm mais chamados de infraestrutura básica.
+  Possível viés de sub-notificação em bairros vulneráveis — menor acesso digital
+  pode significar menos chamados apesar de problemas iguais ou piores.
 
 - **Feriados e eventos extremos (Q3):** feriados reduzem volume. Eventos extremos
   (precipitação > p95 ou temperatura > 35°C) aumentam só os tipos ligados ao clima —
@@ -49,6 +51,7 @@ independente.
 **Melhor modelo:** XGBoost tunado com Optuna (50 trials, 5-fold CV).
 Métrica primária: F1 — equilibra o custo de falso negativo (cidadão sem atendimento)
 com o custo de falso positivo (desperdício de recurso de triagem).
+Threshold otimizado via curva PR (0.37 vs default 0.50), com ganho marginal em F1.
 
 **Interpretabilidade (Q8):** subtipo e órgão responsável dominam as predições via SHAP.
 A taxa histórica de resolução do bairro aparece forte — o que confirma Q2 e levanta
