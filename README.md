@@ -1,177 +1,162 @@
-# Desafio Técnico - Cientista de Dados Sênior
-## Programa Pequenos Cariocas (PIC)
+# Desafio Técnico — Cientista de Dados Sênior
+## Programa Pequenos Cariocas (PIC) | Prefeitura do Rio de Janeiro
 
 ---
 
-## Contexto
+## Sobre a abordagem
 
-O **Programa Pequenos Cariocas** é uma iniciativa intersetorial da Prefeitura do Rio de Janeiro que acompanha crianças de 0 a 6 anos e gestantes em situação de vulnerabilidade, integrando dados de Saúde, Educação e Assistência Social.
+Esse repositório é minha resposta ao desafio técnico. Usei os dados públicos do 1746
+para responder às 10 questões, organizando o trabalho em três notebooks progressivos:
+EDA com APIs externas → modelagem preditiva → sistema de priorização.
 
-Como Cientista de Dados no PIC, você trabalhará com dados complexos de múltiplas fontes, construindo modelos preditivos para antecipar riscos e priorizar intervenções com recursos limitados.
-
-Este desafio usa **dados públicos do 1746** para avaliar suas habilidades em análise exploratória, feature engineering, modelagem preditiva e geração de insights acionáveis para gestão pública.
-
----
-
-## Instruções
-
-1. Crie um **fork público desse repositório** com suas respostas
-2. Use **Jupyter Notebooks** (.ipynb) bem documentados
-3. Inclua **README.md** explicando abordagem e como reproduzir
-
+A escolha de criar módulos Python em `src/` (em vez de colocar tudo nos notebooks) foi
+deliberada: facilita reusar lógica entre notebooks e deixa o código testável de forma
+independente.
 
 ---
 
-## Dados
+## Resultados Principais
 
-### Tabela Principal
-**`datario.adm_central_atendimento_1746.chamado`** (14M+ registros, 2015-2024)
+### Parte 1 — Análise Exploratória
 
-### Tabelas Auxiliares
-- `datario.dados_mestres.bairro`
-- `datario.dados_mestres.area_planejamento`
-- `datario.dados_mestres.regiao_administrativa`
-- `datario.dados_mestres.subprefeitura`
+- **Clima e demanda (Q1):** precipitação tem correlação positiva com chamados de
+  infraestrutura urbana (drenagem, árvores), mas negativa com alguns serviços de
+  conservação. O sinal climático é real, mas específico por categoria de serviço.
 
-### APIs Externas
-- [Public Holiday API](https://date.nager.at/Api)
-- [Open-Meteo Historical Weather API](https://open-meteo.com/)
+- **Padrões territoriais (Q2):** demanda muito concentrada — top 10 bairros respondem
+  por fatia desproporcional do total. Mais relevante: o *perfil* de chamado muda por
+  Área de Planejamento. APs periféricas têm mais chamados de infraestrutura básica;
+  isso tem implicação direta para qualquer política de priorização.
 
-**⚠️ IMPORTANTE**: A tabela tem 14M+ linhas. Use sempre **filtros de partição**: `WHERE data_particao >= '2023-01-01'`
+- **Feriados e eventos extremos (Q3):** feriados reduzem volume. Eventos extremos
+  (precipitação > p95 ou temperatura > 35°C) aumentam só os tipos ligados ao clima —
+  para serviços administrativos, efeito próximo de zero. Mann-Whitney U confirma
+  significância estatística nas categorias sensíveis.
 
----
+- **Previsão de demanda (Q4):** Random Forest com R²=0.821 no teste (2024), superando
+  Ridge (R²=0.791). Features de lag temporal dominam; clima entra como ajuste fino.
 
-## Parte 1: Análise Exploratória com APIs Externas
+### Parte 2 — Modelagem Preditiva
 
-**Use as APIs públicas e análise geoespacial para responder às questões 1-4:**
+| Modelo | Accuracy | Precisão | Recall | F1 | AUC-ROC |
+|--------|----------|----------|--------|----|---------|
+| Regressão Logística | 0.826 | 0.861 | 0.928 | 0.893 | 0.848 |
+| Random Forest | 0.827 | 0.865 | 0.923 | 0.893 | 0.849 |
+| XGBoost (default) | 0.814 | 0.861 | 0.908 | 0.884 | 0.851 |
+| LightGBM | 0.824 | 0.867 | 0.915 | 0.891 | 0.861 |
+| **XGBoost (tuned)** | **0.828** | **0.865** | **0.926** | **0.894** | **0.863** |
 
-### 1. Clima e Demanda de Serviços
+**Melhor modelo:** XGBoost tunado com Optuna (50 trials, 5-fold CV).
+Métrica primária: F1 — equilibra o custo de falso negativo (cidadão sem atendimento)
+com o custo de falso positivo (desperdício de recurso de triagem).
 
-Usando a **Open-Meteo API**, investigue a relação entre condições climáticas (temperatura, precipitação) e o volume de chamados do 1746 no Rio de Janeiro no período 2023-2024.
+**Interpretabilidade (Q8):** subtipo e órgão responsável dominam as predições via SHAP.
+A taxa histórica de resolução do bairro aparece forte — o que confirma Q2 e levanta
+um alerta: o modelo pode perpetuar desigualdades territoriais se não for contrabalanceado.
 
-**Entregue**: Análise de correlação entre variáveis climáticas e diferentes tipos de chamados, com interpretação sobre quais categorias são mais sensíveis ao clima.
+### Parte 3 — Sistema de Priorização
 
-### 2. Padrões Geoespaciais de Demanda
+Score composto: `priority = 0.40·P(atraso) + 0.20·urgência + 0.25·equidade + 0.15·contexto`
 
-Analise a distribuição geoespacial dos chamados do 1746 no Rio de Janeiro (2023-2024). Explore padrões territoriais: há concentração em determinadas regiões? Categorias de chamados variam por território?
+O componente de equidade (w=0.25, segundo maior peso) foi uma escolha deliberada:
+um ranking puramente por P(atraso) excluiria sistematicamente regiões com baixa
+resolução histórica — exatamente as mais vulneráveis.
 
-**Entregue**: Análise geoespacial com visualizações (mapas, heatmaps), identificação de clusters territoriais e insights sobre desigualdades ou padrões de demanda por região administrativa, bairro ou área de planejamento.
+| Estratégia | Precision@20% | Recall@20% | Lift |
+|------------|--------------|-----------|------|
+| Seleção aleatória | 21.8% | 20.1% | 1.0x |
+| Score de prioridade | 58.3% | 53.7% | **2.68x** |
 
-### 3. Eventos Extremos e Feriados
-
-Investigue como **eventos climáticos extremos** e **feriados** (use Public Holiday API) impactam o volume e padrão de chamados no período 2023-2024.
-
-**Entregue**: Análise comparativa entre dias normais, feriados e eventos extremos (defina seus critérios), incluindo tipos de chamados mais afetados, distribuição territorial e interpretação dos padrões observados.
-
-### 4. Previsão de Demanda Multidimensional
-
-Construa um modelo de regressão para prever o volume diário de chamados usando features **climáticas** (temperatura, precipitação), **temporais** (dia da semana, feriados) e **geoespaciais** (região, bairro).
-
-**Entregue**: Dataset agregado, modelo treinado (treino: 2023, teste: 2024), métricas de performance e análise de feature importance. Quais dimensões (clima, tempo, território) são mais relevantes para predição?
-
----
-
-## Parte 2: Modelagem Preditiva - Resolução de Chamados
-
-**Objetivo**: Prever se um chamado será resolvido em até 7 dias.
-
-### 5. Feature Engineering
-
-Crie um dataset de **50.000 chamados do período 2023-2024** (amostra aleatória) para prever se um chamado será resolvido em até 7 dias.
-
-Construa features que capturem aspectos **temporais** (dia, hora, feriado), **climáticos** (temperatura, chuva via API), **geoespaciais** (região administrativa, bairro, coordenadas), **categóricos** (tipo de chamado) e **contextuais** (reclamações).
-
-**Entregue**: Dataset processado, documentação das transformações aplicadas (tratamento de missings, encoding, normalização) e justificativa das escolhas de feature engineering.
-
-### 6. Modelagem Baseline
-
-Treine um modelo baseline de **Logistic Regression** para classificar se um chamado será resolvido em até 7 dias.
-
-**Entregue**: Modelo treinado (treino: 2023, teste: 2024), métricas de performance (precision, recall, F1, AUC-ROC) e justificativa sobre qual métrica você priorizaria no contexto de gestão pública e por quê.
-
-### 7. Modelos Avançados e Tuning
-
-Treine **pelo menos 2 algoritmos** além do baseline (ex: Random Forest, XGBoost, LightGBM) e faça tuning de hiperparâmetros em ao menos um deles.
-
-**Entregue**: Comparação de performance entre modelos, curvas ROC e Precision-Recall do melhor modelo, e análise sobre qual algoritmo você recomendaria para produção.
-
-### 8. Interpretabilidade
-
-Analise a interpretabilidade do melhor modelo usando SHAP ou feature importance nativa.
-
-**Entregue**: Top 10 features mais importantes com interpretação (incluindo relevância de variáveis climáticas e geoespaciais), análise de erros por dimensão (temporal, territorial, categórica) e insights sobre o que o modelo aprendeu que pode informar decisões de gestão.
+Com o mesmo orçamento de 20%, o sistema identifica 2.68x mais chamados que realmente
+vão atrasar, mantendo cobertura em todas as Áreas de Planejamento.
 
 ---
 
-## Parte 3: Sistema de Priorização
+## Como reproduzir
 
-### 9. Score de Prioridade
-
-O órgão tem capacidade para dar atenção especial a apenas **20% dos chamados**. Crie um score de priorização que combine a probabilidade do modelo com outras dimensões relevantes (urgência, impacto, contexto climático, equidade territorial).
-
-**Entregue**: Fórmula do score proposto com justificativa dos pesos e critérios escolhidos. Como você equilibraria eficiência (priorizar chamados com maior risco de atraso) e equidade (não negligenciar regiões vulneráveis)?
-
-### 10. Simulação e Impacto
-
-Simule no conjunto de teste duas estratégias de priorização: seleção aleatória de 20% dos chamados vs. top 20% pelo seu score. Compare a efetividade de cada abordagem.
-
-**Entregue**: Métricas comparativas (precision, recall nos chamados priorizados), visualização de lift curve e recomendação fundamentada sobre qual estratégia implementar, quantificando o ganho esperado.
-
----
-
-## Avaliação
-
-Você será avaliado em cada uma das categorias abaixo, com seus respectivos pesos:
-
-- **SQL e Manipulação de Dados**: peso 1
-- **Modelagem e Python**: peso 2
-- **Visualização e Comunicação**: peso 1
-
-Uma média ponderada será calculada e os melhores candidatos serão chamados para a etapa de entrevistas.
-
-**Dica**: procure fazer algo diferente! Devido à grande quantidade de candidatos, é possível que uma boa média não seja suficiente para te garantir uma entrevista. Tente se destacar!
-
----
-
-## Estrutura Sugerida do Repositório
+### Requisitos
 
 ```
-desafio-pic-ds/
-├── README.md
+Python 3.10+
+pip install -r requirements.txt
+```
+
+### Credenciais BigQuery
+
+Os dados já estão extraídos em `data/raw/`. Para re-extrair do zero, configure
+as credenciais do Google Cloud conforme a
+documentação do pacote `basedosdados` (disponível no PyPI).
+
+### Executar os notebooks
+
+```bash
+# na raiz do projeto
+jupyter notebook
+
+# ou pela CLI
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_analise_apis_clima.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/02_modelagem_resolucao.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/03_sistema_priorizacao.ipynb
+```
+
+Os notebooks foram desenvolvidos e testados com Python 3.13 + kernel `desafio-pic`.
+Se usar outro ambiente, instale as dependências do `requirements.txt` e registre
+o kernel: `python -m ipykernel install --user --name desafio-pic`.
+
+---
+
+## Estrutura do Repositório
+
+```
+.
 ├── notebooks/
-│   ├── 01_analise_apis_clima.ipynb
-│   ├── 02_modelagem_resolucao.ipynb
-│   └── 03_sistema_priorizacao.ipynb
-├── data/                    # (não commitar arquivos grandes)
-│   └── .gitkeep
+│   ├── 01_analise_apis_clima.ipynb     # Parte 1: Q1-Q4 (EDA + APIs)
+│   ├── 02_modelagem_resolucao.ipynb    # Parte 2: Q5-Q8 (Feature eng + modelos)
+│   └── 03_sistema_priorizacao.ipynb    # Parte 3: Q9-Q10 (Score + simulação)
+│
+├── src/
+│   ├── data/           # Extração BigQuery e APIs externas
+│   ├── eda/            # Pipeline de análise exploratória
+│   ├── features/       # Feature engineering (Q5)
+│   ├── models/         # Treino e avaliação dos modelos (Q6-Q8)
+│   ├── prioritization/ # Score de priorização e simulação (Q9-Q10)
+│   └── visualization/  # Plots reutilizáveis
+│
+├── data/
+│   ├── raw/            # Dados extraídos (gitignored se > 100MB)
+│   ├── processed/      # Dados limpos intermediários
+│   └── features/       # X_train, X_test, y_train, y_test (gitignored)
+│
 ├── results/
-│   └── figures/
-└── requirements.txt
+│   ├── figures/        # Todas as visualizações (Q1-Q10)
+│   └── models/         # Modelos treinados (.joblib, gitignored)
+│
+├── vault/              # Documentação interna do projeto (multi-agent)
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## FAQ
+## Principais Bibliotecas
 
-**1. Como economizar cota do BigQuery?**
-- Use sempre `WHERE data_particao >= 'YYYY-MM-DD'`
-- Teste queries com `LIMIT 100` antes de rodar completo
-- Salve resultados intermediários como CSV
-
-**2. Posso usar bibliotecas específicas?**
-Sim! Sugestões: pandas, scikit-learn, xgboost, lightgbm, shap, requests, matplotlib, seaborn, plotly, geopandas, folium, kepler.gl.
-
-**3. Preciso fazer todas as perguntas?**
-Sim, mas profundidade importa mais que completude. Melhor fazer menos com excelência.
-
-**4. Como obter dados das APIs?**
-- Public Holiday API: `requests.get('https://date.nager.at/api/v3/PublicHolidays/2023/BR')` (também para 2024)
-- Open-Meteo: Ver documentação em https://open-meteo.com/en/docs
+| Biblioteca | Uso |
+|---|---|
+| `pandas`, `pyarrow` | Manipulação de dados e leitura de Parquet |
+| `basedosdados`, `google-cloud-bigquery` | Extração do BigQuery |
+| `scikit-learn` | Baseline, encoding, métricas |
+| `xgboost`, `lightgbm` | Modelos avançados |
+| `optuna` | Tuning de hiperparâmetros |
+| `shap` | Interpretabilidade |
+| `geopandas`, `folium` | Análise e visualização geoespacial |
+| `matplotlib`, `seaborn`, `plotly` | Visualizações |
+| `requests` | APIs de clima e feriados |
 
 ---
 
-## Contato
+## Notas sobre os dados
 
-Dúvidas? Envie um email para **selecao.pcrj@gmail.com**
-
-Boa sorte! 🚀
+- Filtro de partição aplicado em todas as queries: `data_particao >= '2023-01-01'`
+- Amostra de 50k chamados para modelagem (Q5-Q10): 24.048 treino (2023) + 25.952 teste (2024)
+- Feature engineering com protocolo anti-leakage rigoroso: target encoding por CV,
+  thresholds calculados só no treino, `data_fim` nunca usada como feature

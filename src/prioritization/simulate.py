@@ -1,4 +1,3 @@
-"""Q10: Simulation of prioritization strategies."""
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,13 +9,11 @@ def simulate_random_selection(
     n_iterations: int = 100,
     random_state: int = 42,
 ) -> dict:
-    """Simulate random selection of chamados for priority attention.
-
-    Returns mean and CI for precision and recall at budget.
-    """
+    """Baseline: seleciona budget_fraction aleatoriamente, repete n_iterations vezes.
+    Retorna média e IC 95% de precision e recall."""
     rng = np.random.RandomState(random_state)
     n_select = int(len(y_true) * budget_fraction)
-    delayed = (y_true == 0)  # target=0 means NOT resolved in 7 days
+    delayed = (y_true == 0)  # target=0 = não resolvido em 7 dias
 
     precisions, recalls = [], []
     for _ in range(n_iterations):
@@ -38,7 +35,6 @@ def simulate_score_selection(
     priority_score: pd.Series,
     budget_fraction: float = 0.20,
 ) -> dict:
-    """Select top-K by priority score and compute metrics."""
     n_select = int(len(y_true) * budget_fraction)
     delayed = (y_true == 0)
 
@@ -56,7 +52,6 @@ def plot_lift_curve(
     priority_score: pd.Series,
     save_path: str = "results/figures/q10_lift_curve.png",
 ):
-    """Plot cumulative gain (lift) curve."""
     delayed = (y_true == 0).astype(int)
     sorted_idx = priority_score.sort_values(ascending=False).index
     sorted_delayed = delayed.loc[sorted_idx].values

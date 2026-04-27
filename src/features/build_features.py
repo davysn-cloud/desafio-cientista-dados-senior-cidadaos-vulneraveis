@@ -1,8 +1,3 @@
-"""Feature engineering pipeline for Q5.
-
-Builds temporal, climate, geospatial, categorical, and contextual features
-for the binary classification target: resolved_in_7_days.
-"""
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -10,7 +5,7 @@ import joblib
 
 
 def compute_target(df: pd.DataFrame) -> pd.Series:
-    """Compute binary target: resolved within 7 days."""
+    # 1 = resolvido em até 7 dias, 0 = atrasado
     df["data_inicio"] = pd.to_datetime(df["data_inicio"])
     df["data_fim"] = pd.to_datetime(df["data_fim"])
     resolution_days = (df["data_fim"] - df["data_inicio"]).dt.total_seconds() / 86400
@@ -18,7 +13,6 @@ def compute_target(df: pd.DataFrame) -> pd.Series:
 
 
 def build_temporal_features(df: pd.DataFrame, holidays_df: pd.DataFrame) -> pd.DataFrame:
-    """Build temporal features from data_inicio."""
     dt = pd.to_datetime(df["data_inicio"])
     holiday_dates = set(pd.to_datetime(holidays_df["date"]).dt.date)
 
@@ -38,7 +32,6 @@ def build_temporal_features(df: pd.DataFrame, holidays_df: pd.DataFrame) -> pd.D
 
 
 def build_climate_features(df: pd.DataFrame, weather_df: pd.DataFrame, train_weather: pd.DataFrame = None) -> pd.DataFrame:
-    """Build climate features by joining on date."""
     weather = weather_df.copy()
     weather["date"] = pd.to_datetime(weather["time"]).dt.date
 
@@ -70,7 +63,6 @@ def build_climate_features(df: pd.DataFrame, weather_df: pd.DataFrame, train_wea
 
 
 def build_geo_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Build geospatial features."""
     features = pd.DataFrame(index=df.index)
     if "latitude" in df.columns:
         features["latitude"] = df["latitude"]

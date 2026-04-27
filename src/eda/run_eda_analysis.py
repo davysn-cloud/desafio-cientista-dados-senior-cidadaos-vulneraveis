@@ -1457,11 +1457,11 @@ for dt in ['Feriado', 'Evento Extremo']:
     dt_vals = daily.loc[daily['day_type'] == dt, 'total_chamados'].values
     if len(dt_vals) > 0:
         stat, pval = stats.mannwhitneyu(normal_vals, dt_vals, alternative='two-sided')
-        sig = '✓ Significativo' if pval < 0.05 else '✗ Não significativo'
+        sig = 'p < 0.05 (sig.)' if pval < 0.05 else 'p >= 0.05 (n.s.)'
         print(f"Normal vs {dt}:")
         print(f"  n = {len(dt_vals)}, U = {stat:.0f}, p = {pval:.2e}")
         print(f"  Média normal = {normal_vals.mean():.0f}, Média {dt.lower()} = {dt_vals.mean():.0f}")
-        print(f"  → {sig} (α=0.05)")
+        print(f"  {sig} (α=0.05)")
         print()
 """)))
 

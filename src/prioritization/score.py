@@ -1,4 +1,3 @@
-"""Q9: Priority score computation."""
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -11,20 +10,8 @@ def compute_priority_score(
     context_score: pd.Series,
     weights: dict = None,
 ) -> pd.Series:
-    """Compute composite priority score.
-
-    priority_score = w1 * P(delay) + w2 * urgency + w3 * equity + w4 * context
-
-    Args:
-        y_proba: Model probability of resolving in 7 days (higher = more likely resolved)
-        urgency_score: Urgency based on chamado type (normalized 0-1)
-        equity_score: Territorial equity score (normalized 0-1)
-        context_score: Weather/contextual score (normalized 0-1)
-        weights: dict with keys w1, w2, w3, w4 (must sum to 1)
-
-    Returns:
-        Priority score normalized to [0, 1]. Higher = higher priority.
-    """
+    # score = w1*P(atraso) + w2*urgencia + w3*equidade + w4*contexto
+    # y_proba é P(resolvido), então P(atraso) = 1 - y_proba
     if weights is None:
         weights = {"w1": 0.40, "w2": 0.20, "w3": 0.25, "w4": 0.15}
 
@@ -49,11 +36,8 @@ def compute_equity_score(
     bairro_series: pd.Series,
     historical_resolution_rates: dict,
 ) -> pd.Series:
-    """Compute equity score: inverse of historical resolution rate.
-
-    Bairros with lower resolution rates get higher equity scores,
-    ensuring underserved areas receive more attention.
-    """
+    # bairros com baixa taxa histórica de resolução recebem score de equidade alto
+    # global_mean como fallback para bairros sem histórico suficiente
     global_mean = np.mean(list(historical_resolution_rates.values()))
     rates = bairro_series.map(historical_resolution_rates).fillna(global_mean)
     equity = 1 - rates  # Invert: low resolution = high equity need

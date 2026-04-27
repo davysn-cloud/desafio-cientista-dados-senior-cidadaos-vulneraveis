@@ -39,6 +39,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Obsidian internals (optional - keep if you want vault settings versioned)
-# vault/.obsidian/workspace.json
+# Obsidian / project coordination (internal use only)
+vault/
+CLAUDE.md
 .claude/

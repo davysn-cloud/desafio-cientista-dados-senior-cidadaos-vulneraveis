@@ -1,4 +1,3 @@
-"""Q7: Train advanced models with hyperparameter tuning."""
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -10,7 +9,6 @@ import joblib
 
 
 def get_default_models() -> dict:
-    """Return default configurations for all models."""
     return {
         "random_forest": RandomForestClassifier(
             n_estimators=200, random_state=42, n_jobs=-1
@@ -30,7 +28,6 @@ def tune_xgboost_optuna(
     y_train: pd.Series,
     n_trials: int = 50,
 ) -> dict:
-    """Tune XGBoost hyperparameters using Optuna."""
 
     def objective(trial):
         params = {
